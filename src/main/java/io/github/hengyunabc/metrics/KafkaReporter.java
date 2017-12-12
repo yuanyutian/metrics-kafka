@@ -39,7 +39,7 @@ public class KafkaReporter extends ScheduledReporter {
 	String topic;
 	ProducerConfig config;
 	Producer<String, String> producer;
-	ExecutorService kafkaExecutor;
+//	ExecutorService kafkaExecutor;
 
 	private String prefix;
 	private String hostName;
@@ -66,9 +66,9 @@ public class KafkaReporter extends ScheduledReporter {
 
 		producer = new Producer<String, String>(config);
 
-		kafkaExecutor = Executors
-				.newSingleThreadExecutor(new ThreadFactoryBuilder()
-						.setNameFormat("kafka-producer-%d").build());
+//		kafkaExecutor = Executors
+//				.newSingleThreadExecutor(new ThreadFactoryBuilder()
+//						.setNameFormat("kafka-producer-%d").build());
 	}
 
 	public static Builder forRegistry(MetricRegistry registry) {
@@ -227,18 +227,17 @@ public class KafkaReporter extends ScheduledReporter {
 		
 		result.put("clock", System.currentTimeMillis());
 		
-		kafkaExecutor.execute(new Runnable() {
-			@Override
-			public void run() {
-				try {
-				KeyedMessage<String, String> message = new KeyedMessage<String, String>(
-						topic, "" + count++, mapper.writeValueAsString(result));
-					producer.send(message);
-				} catch (Exception e) {
-					logger.error("send metrics to kafka error!", e);
-				}
-			}
-		});
+
+		try {
+		KeyedMessage<String, String> message = new KeyedMessage<String, String>(
+				topic, "" + count++, mapper.writeValueAsString(result));
+			producer.send(message);
+		} catch (Exception e) {
+			logger.error("send metrics to kafka error!", e);
+			super.close();
+			logger.warn("close kafka reporter-----");
+		}
+
 	}
 
 }
